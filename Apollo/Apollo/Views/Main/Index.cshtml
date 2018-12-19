@@ -1,0 +1,187 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<!--Barre de navigation-->
+<div class="custom-control-inline col-12">
+    <input id="navbar" class="form-control col-8" type="search" placeholder="Search" aria-label="Search" onkeypress="enterSearch(event)">
+
+    <div class="btn-group" role="group">
+        <button id="btnGroupDrop1" type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Filtres
+        </button>
+        <div class="dropdown-menu" aria-labelledby="btnGroupDrop1" id="dropdownMenu">
+        </div>
+    </div>
+    <button class="btn btn-dark col-2" onclick="searchController()">Search</button>
+</div>
+
+<br /><br /><br />
+
+<!--Fenetres de description des jeux affichees au clic sur le jeu-->
+<div id="modaux">
+</div>
+
+<!--cards pour les jeux-->
+<div class="row" id="cards">
+</div>
+
+<script>
+
+    //fonction qui retourne le code html necessaire a la creation d'un modal pour un jeu donne en argument
+
+    function createModal(obj) {
+
+        //Si aucun resume n'est disponible, le resume par defaut est "No summary"
+        summary = "No summary";
+        if (obj.summary != null) {
+            summary = obj.summary;
+        }
+
+        //retour du code html necessaire a la creation du modal
+        return '<div class="modal fade" id = "modal' +
+            obj.id +
+            '" tabindex = "-1" role = "dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true" > ' +
+                    '<div class="modal-dialog" role = "document" >' +
+                        '<div class="modal-content">' +
+                            '<div class="modal-header">' +
+                                '<h5 class="modal-title" id="exampleModalLongTitle">' +
+                                    obj.name +
+                                '</h5>' +
+                                '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                '</button>' +
+                            '</div>' +
+                        '<div class="modal-body" id="summary'+obj.id+'">' +summary+
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+                '</div>';
+
+    }
+
+    //fonction qui execute une recherche lors de l'appui sur la touche entree
+    function enterSearch(e) {
+        if (e.keyCode == 13) {
+            searchController();
+        }
+    }
+
+    //fonction qui retourne le code html necessaire a la creation d'une card pour un jeu donne en argument
+    function createCard(obj) {
+
+        //Si aucune image n'est disponible, on en definit une par defaut
+        url = "https://www.valleyseek.com/images/noimage.jpg";
+        if (obj.cover != null) {
+            url = obj.cover.url;
+        }
+
+        //retour du code necessaire a la creation de la card
+        return '<div class="card">' +
+                    '<div class="card-header" id="heading1">' +
+                        '<table>' +
+                            '<tr>' +
+                                '<td>' +
+                                    '<h5 class="mb-0">' +
+                                        '<button class="btn btn-link" type="button" data-toggle="modal" data-target="#modal' + obj.id + '">' +
+                                            '<img class="card-img-top" src="' + url + '">' +
+                                        '</button>' +
+                                    '</h5>' +
+                                '</td>' +
+                                '<td>' +
+                                    '<h5>' +
+                                        obj.name +
+                                    '</h5>' +
+                                '</td>' +
+                            '</tr>' +
+                        '</table>' +
+                    '</div>' +
+                '</div>';
+    }
+
+    //fonction qui cree les cards et les modaux pour une liste de jeux
+    function createCards(json_objs)
+    {
+        //on vide la page
+        document.getElementById("cards").innerHTML = "";
+        document.getElementById("modaux").innerHTML = "";
+
+        //on la remplit avec les cards et les modaux pour les jeux donnes en argument
+        for (var i = 0; i < json_objs.length; i++)
+        {
+            document.getElementById("cards").innerHTML += createCard(json_objs[i]);
+            document.getElementById("modaux").innerHTML += createModal(json_objs[i]);
+        }
+    }
+
+    //fonction qui effectue une recherche dans la base de donnees et qui affiche les resultats dans la page
+    function searchController() {
+        $.ajax({
+            //on genere l'url en fonction du contenu de la barre de recherche
+            url: ("/Main/search?searchText=" + document.getElementById("navbar").value + "&genres=" + getSearchGenres()), type: "GET", success: function (result, statut) {
+                //on cree des donnees JSON pour les jeux retournes par la recherche
+                var objs = JSON.parse(result);
+                //on les affiche sur la page
+                createCards(objs);
+            }
+        })
+    }
+
+    //fonction qui genere un code html pour la creation de la liste des checkbox pour les filtres de genre
+    function createCheckbox(obj) {
+        return '<div class="input-group mb-3">' +
+            '<div class="input-group-prepend">' +
+            '<div class="input-group-text">' +
+            '<input type="checkbox" aria-label="Checkbox for following text input" id="' + obj.id + '">' +
+            '</div>' +
+            '</div>' +
+            '<a>' + obj.name + '</a>' +
+            '</div>';
+    }
+
+    //fonction qui charge et affiche la liste des checkbox des genres passes en argument
+    function loadGenres(objs) {
+        document.getElementById("dropdownMenu").innerHTML = "";
+        for (var i = 0; i < objs.length; i++) {
+            document.getElementById("dropdownMenu").innerHTML += createCheckbox(objs[i]);
+        }
+    }
+
+    //fonction qui retourne les id des checkboxes cochees
+    function getCheckedIds() {
+        ids = new Array();
+        cpt = 0
+        for (var i = 0; i < $("#dropdownMenu").children().length; i++) {
+            if ($("#dropdownMenu").children()[i].children[0].children[0].children[0].checked == true) {
+                ids[cpt] = $("#dropdownMenu").children()[i].children[0].children[0].children[0].id;
+                cpt++;
+            }
+        }
+        return ids;
+    }
+
+    //fonction qui retourne un string contenant les id des genres selectionnes, separes par une virgule pour un traitement ulterieur en c#
+    function getSearchGenres() {
+        text = "";
+        checkedIds = getCheckedIds()
+        if (checkedIds.length > 0) {
+            for (var i = 0; i < checkedIds.length; i++) {
+                text += ("," + checkedIds[i]);
+            }
+        }
+        return text;
+    }
+
+    //requete ajax prise en compte a l'ouverture de la page, qui charge les checkboxes et une premiere recherche de jeux
+    $.ajax({
+
+        url: "/Main/genres", type: "GET", success: function (result, statut) {
+            var objs = JSON.parse(result);
+            loadGenres(objs);
+            searchController();
+        }
+    })
+
+</script>
+
+

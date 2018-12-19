@@ -1,0 +1,18 @@
+﻿ .card h5{
+     display:inline !important;
+ }
+ div.card-body{
+     text-align:justify !important;
+ }
+ .card-header{
+     border-bottom:none !important;
+      background-color:rgba(0,0,0,0) !important;
+ }
+.card {
+    border: none !important;
+}
+ .input-group-text{
+     background-color:white !important;
+     border:0px !important;
+ }
+ 
