@@ -39,6 +39,13 @@ namespace Apollo.Controllers
 
             return reponseRequette(requestText);
         }
+        
+        //fonction qui fait la requete pour recuperer les genres
+        public string genres()
+        {
+            string url = "https://api-endpoint.igdb.com/genres/?fields=*";
+            return reponseRequette(url);
+        }
 
         //fonction qui effectue la requete dans l'api et retourne la reponse sous forme de string
         private string reponseRequette(string url)
